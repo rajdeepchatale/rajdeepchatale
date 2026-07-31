@@ -25,7 +25,6 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-rajdeepchatale-0d1117?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rajdeepchatale)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-rajdeepchatale-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/rajdeepchatale)
-[![Portfolio](https://img.shields.io/badge/Portfolio-rajdeepchatale.github.io-0d1117?style=for-the-badge&logo=vercel&logoColor=white)](https://github.com/rajdeepchatale)
 
 <br>
 
