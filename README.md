@@ -9,8 +9,8 @@
 
 <table>
 <tr>
-<td valign="top"><img src="https://raw.githubusercontent.com/rajdeepchatale/rajdeepchatale/main/rajdeep-ascii.svg" width="370" alt="Rajdeep Chatale — ASCII portrait" /></td>
-<td valign="top"><img src="https://raw.githubusercontent.com/rajdeepchatale/rajdeepchatale/main/info-card.svg" width="490" alt="Rajdeep — neofetch info card" /></td>
+<td valign="top"><img src="./rajdeep-ascii.svg" width="370" alt="Rajdeep Chatale — ASCII portrait" /></td>
+<td valign="top"><img src="./info-card.svg" width="490" alt="Rajdeep — neofetch info card" /></td>
 </tr>
 </table>
 
@@ -22,7 +22,7 @@
 
 <h3><code>rajdeep@github ~ $ ./contributions.sh</code></h3>
 
-<img src="https://raw.githubusercontent.com/rajdeepchatale/rajdeepchatale/main/contrib-heatmap.svg" width="860" alt="Rajdeep's GitHub contribution graph — auto-refreshed daily" />
+<img src="./contrib-heatmap.svg" width="860" alt="Rajdeep's GitHub contribution graph — auto-refreshed daily" />
 
 <br>
 <br>
