@@ -1,19 +1,20 @@
-# Reference repo (not yours)
-AVIVASHISHTA29-main/
+# Source photos & raw image assets
+*.jpg
+*.jpeg
+*.png
+*.zip
 
-# Source photos (private — only the ASCII SVG goes to GitHub)
-IMG_9027.jpg
-source-photo.jpg
-source-prepped.png
+# Local scratch / reference directories
+_ref/
+scratch/
+temp/
 
-# Python
+# Environment & Cache
+.venv/
 __pycache__/
 *.pyc
-.venv/
 
-# macOS
+# OS & IDE
 .DS_Store
-
-# IDE
 .vscode/
 .idea/
