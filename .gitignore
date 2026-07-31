@@ -1,0 +1,19 @@
+# Reference repo (not yours)
+AVIVASHISHTA29-main/
+
+# Source photos (private — only the ASCII SVG goes to GitHub)
+IMG_9027.jpg
+source-photo.jpg
+source-prepped.png
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
