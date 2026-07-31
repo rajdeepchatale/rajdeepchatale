@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-render_heatmap_svg.py — Render data/contributions.json as an animated,
-glowing GitHub contribution heatmap SVG.
+render_heatmap_svg.py — Render contribution data as a clean, animated,
+glowing streak SVG matching the exact reference style.
 
 Features:
-  - Terminal-window card aesthetic with traffic-light dots and title bar
-  - Left-to-right cascading reveal: squares light up one by one
-  - Immersive glow animation: active cells pop up and flash with a bright neon green glow
-  - Real stats footer (total contributions, current streak, longest streak, best day)
+  - Clean layout (no window border inside SVG, transparent/dark background)
+  - Month & Day labels
+  - Pop & flash glowing animations for contribution cells (cascading sweep)
+  - Single summary text at bottom: "X contributions in the last year"
 """
 import datetime
 import json
@@ -17,213 +17,118 @@ HERE = os.path.dirname(__file__)
 IN_PATH = os.path.join(HERE, "..", "data", "contributions.json")
 OUT_PATH = os.path.join(HERE, "..", "contrib-heatmap.svg")
 
-# GitHub green palette: level 0 (empty) -> level 5 (neon top end)
-PALETTE = ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353", "#69f0a0"]
+# GitHub green palette: empty -> level 4 (brightest green)
+COLORS = ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"]
+GRAY = "#7d8590"
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-CELL = 12
-GAP = 3
-STEP = CELL + GAP
-PAD = 22
-LEFT_LABEL_W = 30
-TOP_LABEL_H = 20
-TITLEBAR_H = 30
-
-BG = "#0a0e14"
-BG2 = "#0d1420"
-FRAME = "#1f6feb"
-MUTED = "#7d8590"
-TEXT = "#e6edf3"
-ACCENT = "#22d3ee"
-GREEN = "#39d353"
-GOLD = "#f2cc60"
+# Layout dimensions
+CELL, GAP, RAD = 13, 3, 2.5
+LEFT, TOP = 34, 24
 
 # Reveal animation timing
-REVEAL_TIME = 3.6    # Total seconds for full left-to-right sweep
-CELL_DUR = 0.55      # Duration of pop/flash per cell
+REVEAL, DUR = 3.6, 0.55
 
 
 def level_for(count):
     if count == 0:
         return 0
-    if count <= 5:
+    if count <= 3:
         return 1
-    if count <= 15:
+    if count <= 10:
         return 2
-    if count <= 30:
+    if count <= 20:
         return 3
-    if count <= 50:
-        return 4
-    return 5
-
-
-def build_grid(days):
-    first = datetime.date.fromisoformat(days[0]["date"])
-    lead_pad = (first.weekday() + 1) % 7  # Sunday=0
-    grid = []
-    col = [None] * lead_pad
-    for d in days:
-        date = datetime.date.fromisoformat(d["date"])
-        weekday = (date.weekday() + 1) % 7
-        while len(col) < weekday:
-            col.append(None)
-        col.append((d["date"], d["count"], level_for(d["count"])))
-        if len(col) == 7:
-            grid.append(col)
-            col = []
-    if col:
-        while len(col) < 7:
-            col.append(None)
-        grid.append(col)
-    return grid
+    return 4
 
 
 def render(data):
-    days = data["days"]
-    grid = build_grid(days)
-    n_cols = len(grid)
-    art_w = n_cols * STEP
-    art_h = 7 * STEP
+    days = data.get("days", [])
+    total = data.get("total_contributions", sum(d["count"] for d in days))
 
-    month_labels = []
-    seen_months = set()
-    for ci, column in enumerate(grid):
-        for cell in column:
-            if cell is None:
-                continue
-            date = datetime.date.fromisoformat(cell[0])
-            key = (date.year, date.month)
-            if key not in seen_months and date.day <= 7:
-                seen_months.add(key)
-                month_labels.append((ci, date.strftime("%b")))
-            break
+    if not days:
+        print("Warning: No day data found")
+        return ""
 
-    canvas_w = PAD + LEFT_LABEL_W + art_w + PAD
-    stats_h = 88
-    canvas_h = TITLEBAR_H + TOP_LABEL_H + art_h + stats_h + PAD
+    n = len(days)
+    nw = (n + 6) // 7
+    w = LEFT + nw * (CELL + GAP) + 6
+    h = TOP + 7 * (CELL + GAP) + 22
 
-    max_order = (n_cols - 1) + 6 * 0.55
+    max_order = (nw - 1) + 6 * 0.55
 
-    css = f"""
-.c {{
-  transform-box: fill-box;
-  transform-origin: center;
-  opacity: 0;
-  animation: pop {CELL_DUR:.2f}s cubic-bezier(.2,.8,.2,1) both;
-}}
-.g {{
-  transform-box: fill-box;
-  transform-origin: center;
-  opacity: 0;
-  animation: pop {CELL_DUR:.2f}s cubic-bezier(.2,.8,.2,1) both, flash {CELL_DUR + 0.20:.2f}s ease-out both;
-}}
-@keyframes pop {{
-  0%   {{ opacity: 0; transform: scale(0.2); }}
-  60%  {{ opacity: 1; transform: scale(1.18); }}
-  100% {{ opacity: 1; transform: scale(1); }}
-}}
-@keyframes flash {{
-  0%   {{ filter: brightness(2.6) drop-shadow(0 0 6px #69f0a0); }}
-  45%  {{ filter: brightness(2.2) drop-shadow(0 0 4px #39d353); }}
-  100% {{ filter: brightness(1) drop-shadow(0 0 0px transparent); }}
-}}
-@media (prefers-reduced-motion: reduce) {{
-  .c, .g {{ opacity: 1 !important; animation: none !important; }}
-}}
-""".strip()
-
-    parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{canvas_w}" height="{canvas_h}" '
-        f'viewBox="0 0 {canvas_w} {canvas_h}" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">',
-        f'<style>{css}</style>',
-        '<defs>',
-        f'<linearGradient id="hbg" x1="0" y1="0" x2="0" y2="1">'
-        f'<stop offset="0" stop-color="{BG2}"/><stop offset="1" stop-color="{BG}"/></linearGradient>',
-        '</defs>',
-        f'<rect width="{canvas_w}" height="{canvas_h}" rx="12" fill="url(#hbg)"/>',
-        f'<rect x="0.5" y="0.5" width="{canvas_w-1}" height="{canvas_h-1}" rx="12" '
-        f'fill="none" stroke="{FRAME}" stroke-width="1" stroke-opacity="0.55"/>',
-        f'<line x1="0" y1="{TITLEBAR_H}" x2="{canvas_w}" y2="{TITLEBAR_H}" stroke="{FRAME}" stroke-opacity="0.35"/>',
-    ]
-
-    # Traffic light dots
-    for i, dotcol in enumerate(["#ff5f56", "#ffbd2e", "#27c93f"]):
-        parts.append(f'<circle cx="{PAD + i*16}" cy="{TITLEBAR_H/2}" r="5" fill="{dotcol}"/>')
-
-    # Title bar prompt
-    parts.append(f'<text x="{canvas_w/2}" y="{TITLEBAR_H/2 + 4}" fill="{MUTED}" font-size="12" '
-                 f'text-anchor="middle">rajdeep@github: ~/contributions --graph</text>')
-
-    grid_top = TITLEBAR_H + TOP_LABEL_H
-    grid_left = PAD + LEFT_LABEL_W
+    rects = []
+    labels = []
 
     # Month labels
-    for ci, label in month_labels:
-        x = grid_left + ci * STEP
-        parts.append(f'<text x="{x}" y="{TITLEBAR_H + 14}" fill="{MUTED}" font-size="10">{label}</text>')
-
-    # Day labels
-    for wi, wname in [(1, "Mon"), (3, "Wed"), (5, "Fri")]:
-        y = grid_top + wi * STEP + CELL * 0.78
-        parts.append(f'<text x="{PAD}" y="{y:.1f}" fill="{MUTED}" font-size="9">{wname}</text>')
-
-    # Contribution grid with glowing left-to-right sweep
-    for ci, column in enumerate(grid):
-        gx = grid_left + ci * STEP
-        for ri, cell in enumerate(column):
-            if cell is None:
-                continue
-            date_s, count, lvl = cell
-            gy = grid_top + ri * STEP
-            delay = round((ci + ri * 0.55) / max_order * REVEAL_TIME, 3)
-            cls_name = "c g" if lvl >= 1 else "c"
-            plural = "s" if count != 1 else ""
-            parts.append(
-                f'<rect class="{cls_name}" x="{gx}" y="{gy}" width="{CELL}" height="{CELL}" rx="2.5" '
-                f'fill="{PALETTE[lvl]}" style="animation-delay:{delay:.3f}s">'
-                f'<title>{date_s}: {count} contribution{plural}</title></rect>'
+    sd = datetime.date.fromisoformat(days[0]["date"])
+    last_m = None
+    for wk in range(nw):
+        d = sd + datetime.timedelta(days=wk * 7)
+        if d.month != last_m:
+            last_m = d.month
+            labels.append(
+                f'<text class="lbl" x="{LEFT + wk * (CELL + GAP)}" y="{TOP - 8}">{MONTHS[d.month - 1]}</text>'
             )
 
-    # Legend bar
-    leg_y = grid_top + art_h + 6
-    leg_x = canvas_w - PAD - (len(PALETTE) * (CELL - 1) + 70)
-    parts.append(f'<text x="{leg_x}" y="{leg_y + CELL*0.8:.1f}" fill="{MUTED}" font-size="10" text-anchor="end">Less</text>')
-    lx = leg_x + 8
-    for lvl, color in enumerate(PALETTE):
-        parts.append(f'<rect x="{lx}" y="{leg_y}" width="{CELL-1}" height="{CELL-1}" rx="2.2" fill="{color}"/>')
-        lx += CELL
-    parts.append(f'<text x="{lx + 4}" y="{leg_y + CELL*0.8:.1f}" fill="{MUTED}" font-size="10">More</text>')
+    # Day labels
+    for name, r in [("Mon", 1), ("Wed", 3), ("Fri", 5)]:
+        labels.append(
+            f'<text class="lbl" x="2" y="{TOP + r * (CELL + GAP) + CELL - 2}">{name}</text>'
+        )
 
-    sep_y = leg_y + CELL + 14
-    parts.append(f'<line x1="0" y1="{sep_y}" x2="{canvas_w}" y2="{sep_y}" stroke="{FRAME}" stroke-opacity="0.25"/>')
+    # Contribution cells with pop & glowing flash animation
+    for i, c in enumerate(days):
+        wk, row = i // 7, i % 7
+        cnt = c["count"]
+        lvl = level_for(cnt)
+        x = LEFT + wk * (CELL + GAP)
+        y = TOP + row * (CELL + GAP)
+        delay = round((wk + row * 0.55) / max_order * REVEAL, 3)
 
-    # Stats footer
-    cs = data["current_streak"]["length"]
-    ls = data["longest_streak"]["length"]
-    total = data["total_contributions"]
-    best = data["best_day"]
-    rng = data["range"]
+        cls = "c g" if lvl >= 1 else "c e"
+        plural = "s" if cnt != 1 else ""
+        date_s = c["date"]
 
-    ly = sep_y + 24
-    parts.append(f'<text x="{PAD}" y="{ly}" font-size="13" fill="{GREEN}">'
-                 f'<tspan font-weight="700">{total:,}</tspan>'
-                 f'<tspan fill="{MUTED}"> contributions in the last year</tspan></text>')
-    parts.append(f'<text x="{canvas_w - PAD}" y="{ly}" font-size="12" fill="{MUTED}" text-anchor="end">'
-                 f'{rng["start"]} &#8594; {rng["end"]}</text>')
-    ly += 24
-    parts.append(f'<text x="{PAD}" y="{ly}" font-size="13" fill="{MUTED}">current streak '
-                 f'<tspan fill="{ACCENT}" font-weight="700">{cs} days</tspan>'
-                 f'<tspan fill="{MUTED}">   &#183;   longest </tspan>'
-                 f'<tspan fill="{ACCENT}" font-weight="700">{ls} days</tspan></text>')
-    parts.append(f'<text x="{canvas_w - PAD}" y="{ly}" font-size="12" fill="{MUTED}" text-anchor="end">'
-                 f'best day <tspan fill="{GOLD}" font-weight="700">{best["count"]}</tspan> on {best["date"]}</text>')
+        rects.append(
+            f'<rect class="{cls}" x="{x}" y="{y}" width="{CELL}" height="{CELL}" rx="{RAD}" '
+            f'fill="{COLORS[lvl]}" style="animation-delay:{delay:.3f}s">'
+            f'<title>{date_s}: {cnt} contribution{plural}</title></rect>'
+        )
 
-    parts.append("</svg>")
-    return "".join(parts)
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+<style>
+  text.lbl {{ fill: {GRAY}; font-size: 13px; font-weight: 600; }}
+  text.total {{ fill: #e6edf3; font-size: 15px; font-weight: 700; }}
+  .c {{ transform-box: fill-box; transform-origin: center; opacity: 0; animation: pop {DUR}s ease-out both; }}
+  .g {{ animation: pop {DUR}s ease-out both, flash {DUR + 0.15:.2f}s ease-out both; }}
+  @keyframes pop {{
+    0%   {{ opacity: 0; transform: scale(0.2); }}
+    60%  {{ opacity: 1; transform: scale(1.1); }}
+    100% {{ opacity: 1; transform: scale(1); }}
+  }}
+  @keyframes flash {{
+    0%   {{ filter: brightness(2.4); }}
+    45%  {{ filter: brightness(2.4); }}
+    100% {{ filter: brightness(1); }}
+  }}
+  @media (prefers-reduced-motion: reduce) {{
+    .c {{ opacity: 1 !important; animation: none !important; }}
+  }}
+</style>
+<rect width="{w}" height="{h}" fill="none"/>
+{''.join(labels)}
+{''.join(rects)}
+<text class="total" x="{LEFT}" y="{h - 6}">{total:,} contributions in the last year</text>
+</svg>'''
+
+    return svg
 
 
 if __name__ == "__main__":
-    data = json.load(open(IN_PATH))
-    svg = render(data)
-    with open(OUT_PATH, "w") as f:
-        f.write(svg)
-    print(f"wrote {OUT_PATH} ({len(svg)} bytes)")
+    with open(IN_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    svg_content = render(data)
+    with open(OUT_PATH, "w", encoding="utf-8") as f:
+        f.write(svg_content)
+    print(f"wrote {OUT_PATH} ({len(svg_content)} bytes)")
