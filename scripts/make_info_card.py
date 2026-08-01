@@ -22,7 +22,7 @@ HOSTNAME = "github"
 CARD_LINES = [
     ("Role", "Student / Aspiring Developer"),
     ("Stack", "Java · Python · C/C++"),
-    ("Tools", "HTML/CSS · Git · VS Code"),
+    ("Tools", "Git · VS Code"),
     ("OS", "macOS · Linux"),
     ("Shell", "zsh"),
 ]
