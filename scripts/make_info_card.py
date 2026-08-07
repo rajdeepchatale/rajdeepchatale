@@ -20,7 +20,7 @@ USERNAME = "rajdeepchatale"
 HOSTNAME = "github"
 
 CARD_LINES = [
-    ("Role", "Student / Aspiring Developer"),
+    ("Role", "CS Undergrad · Developer"),
     ("Stack", "Java · Python · C/C++"),
     ("Tools", "Git · VS Code"),
     ("OS", "macOS · Linux"),

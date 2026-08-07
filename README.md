@@ -21,7 +21,7 @@
 
 <h3><code>rajdeep@github ~ $ ./connect.sh</code></h3>
 
-<p><b>Student / Aspiring Software Engineer · Problem Solver · Open Source Enthusiast</b></p>
+<p><b>CS Undergrad · Builder · Open Source Enthusiast</b></p>
 
 [![GitHub](https://img.shields.io/badge/GitHub-rajdeepchatale-0d1117?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rajdeepchatale)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-rajdeepchatale-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/rajdeepchatale)
